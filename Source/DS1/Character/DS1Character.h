@@ -38,6 +38,13 @@ private:
 	class UDS1AttributeActorComponent* AttributeComponent;
 
 protected:
+	UPROPERTY(EditAnywhere, Category = "Components")
+	TSubclassOf<UUserWidget> PlayerHUDWidgetClass;
+
+	UPROPERTY()
+	class UDS1PlayerHUDWidget* PlayerHUDWidget;
+
+protected:
 	UPROPERTY(EditAnywhere, Category = "Sprinting")
 	float SprintSpeed = 750.f; // 스프린트 속도
 

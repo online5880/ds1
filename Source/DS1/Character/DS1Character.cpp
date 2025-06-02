@@ -3,10 +3,12 @@
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Blueprint/UserWidget.h"
 #include "Camera/CameraComponent.h"
 #include "Components/DS1AttributeActorComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "UI/DS1PlayerHUDWidget.h"
 
 
 ADS1Character::ADS1Character()
@@ -40,7 +42,15 @@ ADS1Character::ADS1Character()
 void ADS1Character::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	if (PlayerHUDWidgetClass)
+	{
+		PlayerHUDWidget = CreateWidget<UDS1PlayerHUDWidget>(GetWorld(), PlayerHUDWidgetClass);
+		if (PlayerHUDWidget)
+		{
+			PlayerHUDWidget->AddToViewport();
+		}
+	}
 }
 
 void ADS1Character::Tick(float DeltaTime)
