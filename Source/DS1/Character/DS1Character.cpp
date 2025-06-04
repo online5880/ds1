@@ -1,11 +1,13 @@
 
 #include "Character/DS1Character.h"
 
+#include "DS1GameplayTags.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Blueprint/UserWidget.h"
 #include "Camera/CameraComponent.h"
 #include "Components/DS1AttributeActorComponent.h"
+#include "Components/DS1StateComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "UI/DS1PlayerHUDWidget.h"
@@ -36,7 +38,8 @@ ADS1Character::ADS1Character()
 	FollowCamera->SetupAttachment(CameraBoom);
 	FollowCamera->bUsePawnControlRotation = false;
 
-	AttributeComponent = CreateDefaultSubobject<UDS1AttributeActorComponent>(TEXT("AttributeComponent"));
+	AttributeComponent = CreateDefaultSubobject<UDS1AttributeActorComponent>(TEXT("Attribute"));
+	StateComponent = CreateDefaultSubobject<UDS1StateComponent>(TEXT("State"));
 }
 
 void ADS1Character::BeginPlay()
@@ -83,8 +86,9 @@ void ADS1Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ADS1Character::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ADS1Character::Look);
 
-		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this, &ThisClass::Sprinting);
-		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &ThisClass::StopSprint);
+		EnhancedInputComponent->BindAction(SprintRollingAction, ETriggerEvent::Triggered, this, &ThisClass::Sprinting);
+		EnhancedInputComponent->BindAction(SprintRollingAction, ETriggerEvent::Completed, this, &ThisClass::StopSprint);
+		EnhancedInputComponent->BindAction(SprintRollingAction, ETriggerEvent::Canceled, this, &ThisClass::Rolling);
 	}
 }
 
@@ -99,6 +103,14 @@ bool ADS1Character::IsMoving() const
 
 void ADS1Character::Move(const FInputActionValue& Values)
 {
+	check(StateComponent)
+
+	// 이동 입력 가능 상태인지 체크
+	if (StateComponent->MovementInputEnabled() == false)
+	{
+		return;
+	}
+	
 	FVector2D MovementVector = Values.Get<FVector2D>();
 
 	if (Controller != nullptr)
@@ -148,5 +160,31 @@ void ADS1Character::StopSprint()
 	// 스프린트 중지 시 속도를 원래대로 되돌림
 	GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
 	AttributeComponent->ToggleStaminaRegeneration(true);
+}
+
+void ADS1Character::Rolling()
+{
+	check(AttributeComponent)
+	check(StateComponent)
+
+	if (AttributeComponent->CheckHasEnoughStamina(15.f))
+	{
+		// 스태미나 재충전 멈춤
+		AttributeComponent->ToggleStaminaRegeneration(false);
+
+		// 이동입력 처리 무시
+		StateComponent->ToggleMovementInput(false);
+
+		// 스태미나 차감
+		AttributeComponent->DecreaseStamina(15.f);
+
+		// 구르기 애니메이션 재생
+		PlayAnimMontage(RollingMontage);
+
+		StateComponent->SetState(DS1GameplayTags::Character_State_Rolling);
+
+		// 스태미나 재충전 시작
+		AttributeComponent->ToggleStaminaRegeneration(true, 1.5f);
+	}
 }
 

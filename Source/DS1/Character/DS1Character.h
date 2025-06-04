@@ -31,11 +31,14 @@ private:
 	UInputAction* LookAction;
 
 	UPROPERTY(EditAnywhere, Category = "Input")
-	UInputAction* SprintAction;
+	UInputAction* SprintRollingAction;
 
 private:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly ,Category = "Input", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class UDS1AttributeActorComponent* AttributeComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class UDS1StateComponent* StateComponent;
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "Components")
@@ -50,6 +53,10 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Sprinting")
 	float NormalSpeed = 500.f; // 일반 속도
+
+protected:
+	UPROPERTY(EditAnywhere, Category = "Montage")
+	UAnimMontage* RollingMontage; // 구르기 애니메이션 몽타주
 	
 public:
 	ADS1Character();
@@ -64,15 +71,23 @@ public:
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+public:
+	FORCEINLINE UDS1StateComponent* GetStateComponent() const { return StateComponent; }
+
 protected:
+	/** 캐릭터가 이동중인지 체크 */
 	bool IsMoving() const;
-	
+
+	/** 이동 */
 	void Move(const FInputActionValue& Values);
+	/** 카메라 방향 */
 	void Look(const FInputActionValue& Values);
-	
+	/** 질주 */
 	void Sprinting();
-	
+	/** 질주 중지 */
 	void StopSprint();
+	/** 구르기 */
+	void Rolling();
 };
 
 
