@@ -33,12 +33,18 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Input")
 	UInputAction* SprintRollingAction;
 
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputAction* InteractAction;
+
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class UDS1AttributeActorComponent* AttributeComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class UDS1StateComponent* StateComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class UCombatComponent* CombatComponent;
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "Components")
@@ -88,6 +94,8 @@ protected:
 	void StopSprint();
 	/** 구르기 */
 	void Rolling();
+	/** 상호작용 */
+	void Interact();
 };
 
 

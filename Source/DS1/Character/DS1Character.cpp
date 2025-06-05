@@ -6,10 +6,13 @@
 #include "EnhancedInputSubsystems.h"
 #include "Blueprint/UserWidget.h"
 #include "Camera/CameraComponent.h"
+#include "Components/DS1CombatComponent.h"
 #include "Components/DS1AttributeActorComponent.h"
 #include "Components/DS1StateComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Interfaces/DS1Interact.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "UI/DS1PlayerHUDWidget.h"
 
 
@@ -40,6 +43,7 @@ ADS1Character::ADS1Character()
 
 	AttributeComponent = CreateDefaultSubobject<UDS1AttributeActorComponent>(TEXT("Attribute"));
 	StateComponent = CreateDefaultSubobject<UDS1StateComponent>(TEXT("State"));
+	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat"));
 }
 
 void ADS1Character::BeginPlay()
@@ -60,8 +64,8 @@ void ADS1Character::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	GEngine->AddOnScreenDebugMessage(0, 1.5f, FColor::Cyan, FString::Printf(TEXT("Stamina: %f"), AttributeComponent->GetBaseStamina()));
-	GEngine->AddOnScreenDebugMessage(2, 1.5f, FColor::Cyan, FString::Printf(TEXT("MaxWalkSpeed: %f"), GetCharacterMovement()->MaxWalkSpeed));
+	// GEngine->AddOnScreenDebugMessage(0, 1.5f, FColor::Cyan, FString::Printf(TEXT("Stamina: %f"), AttributeComponent->GetBaseStamina()));
+	// GEngine->AddOnScreenDebugMessage(2, 1.5f, FColor::Cyan, FString::Printf(TEXT("MaxWalkSpeed: %f"), GetCharacterMovement()->MaxWalkSpeed));
 }
 
 void ADS1Character::NotifyControllerChanged()
@@ -89,6 +93,7 @@ void ADS1Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInputComponent->BindAction(SprintRollingAction, ETriggerEvent::Triggered, this, &ThisClass::Sprinting);
 		EnhancedInputComponent->BindAction(SprintRollingAction, ETriggerEvent::Completed, this, &ThisClass::StopSprint);
 		EnhancedInputComponent->BindAction(SprintRollingAction, ETriggerEvent::Canceled, this, &ThisClass::Rolling);
+		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &ThisClass::Interact);
 	}
 }
 
@@ -187,4 +192,41 @@ void ADS1Character::Rolling()
 		AttributeComponent->ToggleStaminaRegeneration(true, 1.5f);
 	}
 }
+
+void ADS1Character::Interact()
+{
+	FHitResult OutHit;
+	const FVector Start = GetActorLocation();
+	const FVector End = Start;
+	constexpr float Radius = 100.f;
+
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
+	ObjectTypes.Add(UEngineTypes::ConvertToObjectType(COLLISION_OBJECT_INTERACTION));
+
+	TArray<AActor*> ActorToIgnore;
+
+	bool bHit = UKismetSystemLibrary::SphereTraceSingleForObjects(
+		this,
+		Start,
+		End,
+		Radius,
+		ObjectTypes,
+		false,
+		ActorToIgnore,
+		EDrawDebugTrace::ForDuration,
+		OutHit,
+		true);
+
+	if (bHit)
+	{
+		if (AActor* HitActor = OutHit.GetActor())
+		{
+			if (IDS1Interact* Interaction = Cast<IDS1Interact>(HitActor))
+			{
+				// 상호작용 인터페이스가 구현되어 있다면 상호작용 호출
+				Interaction->Interact(this);
+			}
+		}
+	}
+} 
 
