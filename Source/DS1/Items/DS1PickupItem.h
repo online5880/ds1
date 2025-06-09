@@ -7,6 +7,7 @@
 #include "Interfaces/DS1Interact.h"
 #include "DS1PickupItem.generated.h"
 
+
 UCLASS()
 class DS1_API ADS1PickupItem : public AActor, public IDS1Interact
 {
@@ -23,10 +24,15 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-	virtual void Interact(AActor* Interactor) override;
+	virtual void OnConstruction(const FTransform& Transform) override;
+
+	virtual void Interact(AActor* InteractionActor) override;
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Item")
 	UStaticMeshComponent* Mesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
+	TSubclassOf<class ADS1Equipment> EquipmentClass;
 
 };

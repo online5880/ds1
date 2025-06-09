@@ -1,5 +1,7 @@
 #include "Items/DS1PickupItem.h"
 
+#include "Equipments/DS1Equipment.h"
+
 ADS1PickupItem::ADS1PickupItem()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -22,8 +24,29 @@ void ADS1PickupItem::Tick(float DeltaTime)
 
 }
 
-void ADS1PickupItem::Interact(AActor* Interactor)
+void ADS1PickupItem::OnConstruction(const FTransform& Transform)
 {
-	GEngine->AddOnScreenDebugMessage(0,1.5f,FColor::Cyan,FString::Printf(TEXT("ADS1PickupItem Interact")));
+	Super::OnConstruction(Transform);
+
+	if (EquipmentClass)
+	{
+		if (ADS1Equipment* CDO = EquipmentClass->GetDefaultObject<ADS1Equipment>())
+		{
+			Mesh->SetStaticMesh(CDO->MeshAsset);
+		}
+	}
+}
+
+void ADS1PickupItem::Interact(AActor* InteractionActor)
+{
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = InteractionActor;
+
+	ADS1Equipment* SpawnItem = GetWorld()->SpawnActor<ADS1Equipment>(EquipmentClass, GetActorTransform(), SpawnParams);
+	if (SpawnItem)
+	{
+		SpawnItem->EquipItem();
+		Destroy();
+	}
 }
 
