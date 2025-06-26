@@ -9,6 +9,7 @@
 #include "Components/DS1CombatComponent.h"
 #include "Components/DS1AttributeActorComponent.h"
 #include "Components/DS1StateComponent.h"
+#include "Equipments/DS1Weapon.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Interfaces/DS1Interact.h"
@@ -43,7 +44,7 @@ ADS1Character::ADS1Character()
 
 	AttributeComponent = CreateDefaultSubobject<UDS1AttributeActorComponent>(TEXT("Attribute"));
 	StateComponent = CreateDefaultSubobject<UDS1StateComponent>(TEXT("State"));
-	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("Combat"));
+	CombatComponent = CreateDefaultSubobject<UDS1CombatComponent>(TEXT("Combat"));
 }
 
 void ADS1Character::BeginPlay()
@@ -90,10 +91,18 @@ void ADS1Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ADS1Character::Move);
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ADS1Character::Look);
 
+		// 스프린트 액션 바인딩
 		EnhancedInputComponent->BindAction(SprintRollingAction, ETriggerEvent::Triggered, this, &ThisClass::Sprinting);
 		EnhancedInputComponent->BindAction(SprintRollingAction, ETriggerEvent::Completed, this, &ThisClass::StopSprint);
+
+		// 구르기 액션 바인딩
 		EnhancedInputComponent->BindAction(SprintRollingAction, ETriggerEvent::Canceled, this, &ThisClass::Rolling);
+
+		// 상호작용 액션 바인딩
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &ThisClass::Interact);
+
+		// 전투 활성화/비활성화 토글
+		EnhancedInputComponent->BindAction(ToggleCombatAction, ETriggerEvent::Started, this, &ThisClass::ToggleCombat);
 	}
 }
 
@@ -105,6 +114,19 @@ bool ADS1Character::IsMoving() const
 	}
 	return false;
 }
+
+bool ADS1Character::CanToggleCombat() const
+{
+	check(StateComponent);
+
+	FGameplayTagContainer CheckTags;
+	CheckTags.AddTag(DS1GameplayTags::Character_State_Attacking);
+	CheckTags.AddTag(DS1GameplayTags::Character_State_Rolling);
+	CheckTags.AddTag(DS1GameplayTags::Character_State_GeneralAction);
+
+	return StateComponent->IsCurrentStateEqualToAny(CheckTags) == false;
+}
+
 
 void ADS1Character::Move(const FInputActionValue& Values)
 {
@@ -230,3 +252,29 @@ void ADS1Character::Interact()
 	}
 } 
 
+void ADS1Character::ToggleCombat()
+{
+	check(CombatComponent)
+	check(StateComponent)
+
+	if (CombatComponent)
+	{
+		if (const ADS1Weapon* Weapon = CombatComponent->GetMainWeapon())
+		{
+			if (CanToggleCombat())
+			{
+				StateComponent->SetState(DS1GameplayTags::Character_State_GeneralAction);
+
+				if (CombatComponent->IsCombatEnabled())
+				{
+					PlayAnimMontage(Weapon->GetMontageForTag(DS1GameplayTags::Character_Action_Unequip));
+				}
+				else
+				{
+					PlayAnimMontage(Weapon->GetMontageForTag(DS1GameplayTags::Character_Action_Equip));
+				}
+			}
+		}
+	}
+	
+}

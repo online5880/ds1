@@ -6,7 +6,7 @@
 
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
-class DS1_API UCombatComponent : public UActorComponent
+class DS1_API UDS1CombatComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
@@ -14,8 +14,12 @@ protected:
 	UPROPERTY()
 	class ADS1Weapon* MainWeapon;
 
+	/* 전투 활성화 상태인지? */
+	UPROPERTY(EditAnywhere)
+	bool bCombatEnabled = false;
+
 public:
-	UCombatComponent();
+	UDS1CombatComponent();
 
 protected:
 
@@ -28,4 +32,9 @@ public:
 public:
 	void SetWeapon(ADS1Weapon* NewWeapon);
 	
+public:
+	FORCEINLINE bool IsCombatEnabled() const { return bCombatEnabled; }
+	FORCEINLINE void SetCombatEnabled(const bool bEnabled) { bCombatEnabled = bEnabled; }
+	
+	FORCEINLINE ADS1Weapon* GetMainWeapon() const { return MainWeapon; }
 };

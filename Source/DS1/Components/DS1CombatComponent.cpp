@@ -1,36 +1,30 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
-
-#include "DS1CombatComponent.h"
+﻿#include "DS1CombatComponent.h"
 
 #include "Character/DS1Character.h"
 #include "Equipments/DS1Weapon.h"
 #include "Items/DS1PickupItem.h"
 
-UCombatComponent::UCombatComponent()
+UDS1CombatComponent::UDS1CombatComponent()
 {
 
 	PrimaryComponentTick.bCanEverTick = true;
 
 }
 
-
-// Called when the game starts
-void UCombatComponent::BeginPlay()
+void UDS1CombatComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
 	
 }
 
-void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType,
+void UDS1CombatComponent::TickComponent(float DeltaTime, ELevelTick TickType,
                                      FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 }
 
-void UCombatComponent::SetWeapon(ADS1Weapon* NewWeapon)
+void UDS1CombatComponent::SetWeapon(ADS1Weapon* NewWeapon)
 {
 	if (::IsValid(MainWeapon))
 	{

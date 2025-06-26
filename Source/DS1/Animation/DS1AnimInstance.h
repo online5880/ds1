@@ -45,4 +45,7 @@ public:
 public:
 	UFUNCTION()
 	void AnimNotify_ResetMovementInput();
+
+	UFUNCTION()
+	void AnimNotify_ResetState();
 };

@@ -1,6 +1,7 @@
 ﻿#include "DS1Weapon.h"
 
 #include "Components/DS1CombatComponent.h"
+#include "Data/DS1MontageActionData.h"
 
 ADS1Weapon::ADS1Weapon()
 {
@@ -12,12 +13,19 @@ void ADS1Weapon::EquipItem()
 {
 	Super::EquipItem();
 
-	CombatComponent = GetOwner()->GetComponentByClass<UCombatComponent>();
+	CombatComponent = GetOwner()->GetComponentByClass<UDS1CombatComponent>();
 
 	if (CombatComponent)
 	{
 		CombatComponent->SetWeapon(this);
 
-		AttachToOwner(UnequipSocketName);
+		const FName AttachSocket = CombatComponent->IsCombatEnabled() ? EquipSocketName : UnequipSocketName;
+
+		AttachToOwner(AttachSocket);
 	}
+}
+
+UAnimMontage* ADS1Weapon::GetMontageForTag(const FGameplayTag& Tag, const int32 Index) const
+{
+	return MontageActionData->GetMontageForTag(Tag, Index);
 }

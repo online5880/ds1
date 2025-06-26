@@ -44,7 +44,11 @@ private:
 	class UDS1StateComponent* StateComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
-	class UCombatComponent* CombatComponent;
+	class UDS1CombatComponent* CombatComponent;
+
+	/* 전투 활성화/비활성화 토글 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input", meta = (AllowPrivateAccess = "true"))
+	UInputAction* ToggleCombatAction;
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "Components")
@@ -83,6 +87,7 @@ public:
 protected:
 	/** 캐릭터가 이동중인지 체크 */
 	bool IsMoving() const;
+	bool CanToggleCombat() const;
 
 	/** 이동 */
 	void Move(const FInputActionValue& Values);
@@ -96,6 +101,8 @@ protected:
 	void Rolling();
 	/** 상호작용 */
 	void Interact();
+	/** 전투 활성화/비활성화 토글 */
+	void ToggleCombat();
 };
 
 
