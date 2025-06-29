@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "GameFramework/Character.h"
 #include "DS1Character.generated.h"
 
@@ -36,6 +36,16 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Input")
 	UInputAction* InteractAction;
 
+	/* 전투 활성화/비활성화 토글 */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input", meta = (AllowPrivateAccess = "true"))
+	UInputAction* ToggleCombatAction;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputAction* AttackAction;
+
+	UPROPERTY(EditAnywhere, Category = "Input")
+	UInputAction* HeavyAttackAction;
+
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class UDS1AttributeActorComponent* AttributeComponent;
@@ -46,10 +56,8 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class UDS1CombatComponent* CombatComponent;
 
-	/* 전투 활성화/비활성화 토글 */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Input", meta = (AllowPrivateAccess = "true"))
-	UInputAction* ToggleCombatAction;
 
+// UI Section
 protected:
 	UPROPERTY(EditAnywhere, Category = "Components")
 	TSubclassOf<UUserWidget> PlayerHUDWidgetClass;
@@ -64,6 +72,29 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Sprinting")
 	float NormalSpeed = 500.f; // 일반 속도
 
+	UPROPERTY(VisibleAnywhere, Category = "Sprinting")
+	bool bSprinting = false; // 스프린트 중인지 여부
+
+
+// Combo Section
+protected:
+	/* 콤보 시퀀스 진행중 */
+	bool bComboSequenceRunning = false;
+
+	/* 콤보 입력 가능? */
+	bool bCanComboInput = false;
+
+	/* 콤보 카운터 */
+	int32 ComboCounter = 0;
+
+	/* 콤보 입력 여부 */
+	bool bSavedComboInput = false;
+
+	/* 콤보 리셋 타이머 핸들 */
+	FTimerHandle ComboResetTimerHandle;
+	
+	
+// Montage Section
 protected:
 	UPROPERTY(EditAnywhere, Category = "Montage")
 	UAnimMontage* RollingMontage; // 구르기 애니메이션 몽타주
@@ -88,6 +119,7 @@ protected:
 	/** 캐릭터가 이동중인지 체크 */
 	bool IsMoving() const;
 	bool CanToggleCombat() const;
+	FORCEINLINE bool IsSprinting() const { return bSprinting; }
 
 	/** 이동 */
 	void Move(const FInputActionValue& Values);
@@ -103,6 +135,32 @@ protected:
 	void Interact();
 	/** 전투 활성화/비활성화 토글 */
 	void ToggleCombat();
+	void AutoToggleCombat();
+	/* Attack */
+	void Attack();
+	void SpecialAttack();
+	void HeavyAttack();
+
+protected:
+	/* 현재 상태에서 수행 가능한 일반공격 */
+	FGameplayTag GetAttackPerform() const;
+
+	/* 공격 가능 조건 체크 */
+	bool CanPerformAttack(const FGameplayTag& AttackType) const;
+	/* 공격 실행 */
+	void DoAttack(const FGameplayTag& AttackType);
+	/* 콤보 실행 */
+	void ExecuteComboAttack(const FGameplayTag& AttackType);
+	/* 콤보 리셋 */
+	void ResetCombo();
+
+
+// Combo AnimNotify Section
+public:
+	void EnableComboWindow();
+	void DisableComboWindow();
+	void AttackFinished(const float ComboResetDelay);
+	
 };
 
 

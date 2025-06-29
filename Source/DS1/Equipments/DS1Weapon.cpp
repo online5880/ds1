@@ -1,12 +1,15 @@
 ﻿#include "DS1Weapon.h"
 
+#include "DS1GameplayTags.h"
 #include "Components/DS1CombatComponent.h"
 #include "Data/DS1MontageActionData.h"
 
 ADS1Weapon::ADS1Weapon()
 {
-	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	StaminaCostMap.Emplace(DS1GameplayTags::Character_Attack_Light, 7.f);
+	StaminaCostMap.Emplace(DS1GameplayTags::Character_Attack_Heavy, 20.f);
+	StaminaCostMap.Emplace(DS1GameplayTags::Character_Attack_Special, 15.f);
+	StaminaCostMap.Emplace(DS1GameplayTags::Character_Attack_Running,12.f);
 }
 
 void ADS1Weapon::EquipItem()
@@ -28,4 +31,13 @@ void ADS1Weapon::EquipItem()
 UAnimMontage* ADS1Weapon::GetMontageForTag(const FGameplayTag& Tag, const int32 Index) const
 {
 	return MontageActionData->GetMontageForTag(Tag, Index);
+}
+
+float ADS1Weapon::GetStaminaCostForTag(const FGameplayTag& Tag) const
+{
+	if (StaminaCostMap.Contains(Tag))
+	{
+		return StaminaCostMap[Tag];
+	}
+	return 0.0f;
 }

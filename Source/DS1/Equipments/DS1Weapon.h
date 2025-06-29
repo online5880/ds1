@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
+
 #include "DS1Equipment.h"
+#include "GameplayTagContainer.h"
 #include "DS1Weapon.generated.h"
 
-struct FGameplayTag;
 class UDS1MontageActionData;
 
 UCLASS()
@@ -28,6 +28,11 @@ protected:
 	UPROPERTY()
 	class UDS1CombatComponent* CombatComponent;
 
+protected:
+	UPROPERTY(EditAnywhere)
+	TMap<FGameplayTag, float> StaminaCostMap;
+ 	
+
 public:
 	ADS1Weapon();
 
@@ -35,6 +40,8 @@ public:
 	virtual void EquipItem() override;
 
 	UAnimMontage* GetMontageForTag(const FGameplayTag& Tag, const int32 Index = 0) const;
+
+	float GetStaminaCostForTag(const FGameplayTag& Tag) const;
 
 	FORCEINLINE FName GetEquipSocketName() const { return EquipSocketName; }
 	FORCEINLINE FName GetUnequipSocketName() const { return UnequipSocketName; }

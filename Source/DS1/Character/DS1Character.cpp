@@ -103,6 +103,15 @@ void ADS1Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 		// 전투 활성화/비활성화 토글
 		EnhancedInputComponent->BindAction(ToggleCombatAction, ETriggerEvent::Started, this, &ThisClass::ToggleCombat);
+
+		// 공격 상태로 자동 전환
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started, this, &ThisClass::AutoToggleCombat);
+		// 일반 공격
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Canceled, this, &ThisClass::Attack);
+		// 특수 공격
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &ADS1Character::SpecialAttack);
+		// 강력한 공격
+		EnhancedInputComponent->BindAction(HeavyAttackAction, ETriggerEvent::Triggered, this, &ADS1Character::HeavyAttack);
 	}
 }
 
@@ -175,6 +184,8 @@ void ADS1Character::Sprinting()
 		// 스프린트 중일 때 속도를 증가시키고 스태미나 감소
 		GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
 		AttributeComponent->DecreaseStamina(0.1f); // 스프린트 시 스태미나 감소
+
+		bSprinting = true;
 	}
 	else
 	{
@@ -187,6 +198,7 @@ void ADS1Character::StopSprint()
 	// 스프린트 중지 시 속도를 원래대로 되돌림
 	GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
 	AttributeComponent->ToggleStaminaRegeneration(true);
+	bSprinting = false;
 }
 
 void ADS1Character::Rolling()
@@ -277,4 +289,177 @@ void ADS1Character::ToggleCombat()
 		}
 	}
 	
+}
+
+void ADS1Character::AutoToggleCombat()
+{
+	if (CombatComponent)
+	{
+		if (!CombatComponent->IsCombatEnabled())
+		{
+			ToggleCombat();
+		}
+	}
+}
+
+void ADS1Character::Attack()
+{
+	const FGameplayTag AttackTypeTag = GetAttackPerform();
+
+	if (CanPerformAttack(AttackTypeTag))
+	{
+		ExecuteComboAttack(AttackTypeTag);
+	}
+}
+
+void ADS1Character::SpecialAttack()
+{
+	const FGameplayTag AttackTypeTag = DS1GameplayTags::Character_Attack_Special;
+
+	if (CanPerformAttack(AttackTypeTag))
+	{
+		ExecuteComboAttack(AttackTypeTag);
+	}
+}
+
+void ADS1Character::HeavyAttack()
+{
+	AutoToggleCombat();
+
+	const FGameplayTag AttackTypeTag = DS1GameplayTags::Character_Attack_Heavy;
+
+	if (CanPerformAttack(AttackTypeTag))
+	{
+		ExecuteComboAttack(AttackTypeTag);
+	}
+}
+
+
+FGameplayTag ADS1Character::GetAttackPerform() const
+{
+	if (IsSprinting())
+	{
+		return DS1GameplayTags::Character_Attack_Running;
+	}
+	return DS1GameplayTags::Character_Attack_Light;
+}
+
+bool ADS1Character::CanPerformAttack(const FGameplayTag& AttackType) const
+{
+	check(StateComponent)
+	check(CombatComponent)
+	check(AttributeComponent)
+
+	if (IsValid(CombatComponent->GetMainWeapon()) == false)
+	{
+		return false;
+	}
+
+	FGameplayTagContainer CheckTags;
+	CheckTags.AddTag(DS1GameplayTags::Character_State_Rolling);
+	CheckTags.AddTag(DS1GameplayTags::Character_State_GeneralAction);
+
+	const float StaminaCost = CombatComponent->GetMainWeapon()->GetStaminaCostForTag(AttackType);
+
+	return StateComponent->IsCurrentStateEqualToAny(CheckTags) == false
+			&& CombatComponent->IsCombatEnabled()
+			&& AttributeComponent->CheckHasEnoughStamina(StaminaCost);
+}
+
+void ADS1Character::DoAttack(const FGameplayTag& AttackType)
+{
+	check(StateComponent)
+	check(CombatComponent)
+	check(AttributeComponent)
+
+	if (const ADS1Weapon* Weapon = CombatComponent->GetMainWeapon())
+	{
+		StateComponent->SetState(DS1GameplayTags::Character_State_Attacking);
+		StateComponent->ToggleMovementInput(false);
+		CombatComponent->SetLastAttackType(AttackType);
+
+		AttributeComponent->ToggleStaminaRegeneration(false); // 공격 중 스태미나 재충전 비활성화
+
+		UAnimMontage* Montage = Weapon->GetMontageForTag(AttackType, ComboCounter);
+		if (!Montage)
+		{
+			// 콤보 한계 도달
+			ComboCounter = 0;
+			Montage = Weapon->GetMontageForTag(AttackType, ComboCounter);
+		}
+
+		PlayAnimMontage(Montage);
+
+		const float StaminaCost = Weapon->GetStaminaCostForTag(AttackType);
+		AttributeComponent->DecreaseStamina(StaminaCost);
+		AttributeComponent->ToggleStaminaRegeneration(true, 1.5f);
+	}
+}
+
+void ADS1Character::ExecuteComboAttack(const FGameplayTag& AttackType)
+{
+	if (StateComponent->GetCurrentState() != DS1GameplayTags::Character_State_Attacking)
+	{
+		if (bComboSequenceRunning && bCanComboInput == false)
+		{
+			// 애니메이션은 끝났지만 아직 콤보 시퀀스가 유요할 때 - 추가 입력 기회
+			ComboCounter++;
+			UE_LOG(LogTemp, Warning, TEXT("Combo Counter: %d"), ComboCounter);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Combo Sequence Started"));
+			ResetCombo();
+			bComboSequenceRunning = true;
+		}
+		DoAttack(AttackType);
+		GetWorld()->GetTimerManager().ClearTimer(ComboResetTimerHandle);
+	}
+	else if (bCanComboInput)
+	{
+		// 콤보 윈도우가 열려 있을 때 - 최적의 타이밍
+		bSavedComboInput = true;
+	}
+}
+
+void ADS1Character::ResetCombo()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Combo Reset"));
+
+	bComboSequenceRunning = false;
+	bCanComboInput = false;
+	bSavedComboInput = false;
+	ComboCounter = 0;
+}
+
+void ADS1Character::EnableComboWindow()
+{
+	bCanComboInput = true;
+	UE_LOG(LogTemp, Warning, TEXT("Combo Window Enabled"));
+}
+
+void ADS1Character::DisableComboWindow()
+{
+	check(CombatComponent)
+
+	bCanComboInput = false;
+
+	if (bSavedComboInput)
+	{
+		bSavedComboInput = false;
+		ComboCounter++;
+		UE_LOG(LogTemp, Warning, TEXT("Combo Counter: %d"), ComboCounter);
+		DoAttack(CombatComponent->GetLastAttackType());
+	}
+}
+
+void ADS1Character::AttackFinished(const float ComboResetDelay)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Attack Finished"));
+	if (StateComponent)
+	{
+		StateComponent->ToggleMovementInput(true);
+	}
+	// ComboResetDelay 후에 콤보 시퀀스 종료
+	GetWorld()->GetTimerManager().SetTimer(ComboResetTimerHandle, this, &ThisClass::ResetCombo, ComboResetDelay, false);
 }
