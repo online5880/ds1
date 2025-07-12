@@ -1,5 +1,8 @@
 #include "Components/DS1AttributeActorComponent.h"
 
+#include "DS1GameplayTags.h"
+#include "DS1StateComponent.h"
+
 
 UDS1AttributeActorComponent::UDS1AttributeActorComponent()
 {
@@ -65,6 +68,28 @@ void UDS1AttributeActorComponent::BroadcastAttributeChanged(EDS1AttributeType In
 		OnAttributeChanged.Broadcast(InAttributeType, Ratio);
 	}
 	
+}
+
+void UDS1AttributeActorComponent::TakeDamageAmount(float DamageAmount)
+{
+	// 체력 감소
+	BaseHealth = FMath::Clamp(BaseHealth - DamageAmount, 0.f, MaxHealth);
+
+	BroadcastAttributeChanged(EDS1AttributeType::Health);
+
+	if (BaseHealth <= 0.f)
+	{
+		if (OnDeath.IsBound())
+		{
+			OnDeath.Broadcast();
+		}
+
+		// Set Death State
+		if (UDS1StateComponent* StateComp = GetOwner()->FindComponentByClass<UDS1StateComponent>())
+		{
+			StateComp->SetState(DS1GameplayTags::Character_State_Death);
+		}
+	}
 }
 
 void UDS1AttributeActorComponent::RegenerateStaminaHandler()

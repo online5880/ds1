@@ -8,3 +8,14 @@ enum class EDS1AttributeType : uint8
 	Stamina,
 	Health,
 };
+
+UENUM(BlueprintType)
+enum class EHitDirection : uint8
+{
+	Front,
+	Back,
+	Left,
+	Right,
+	Up,
+	Down,
+};
