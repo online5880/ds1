@@ -9,6 +9,7 @@
 #include "Components/DS1CombatComponent.h"
 #include "Components/DS1AttributeActorComponent.h"
 #include "Components/DS1StateComponent.h"
+#include "Components/DS1TargetingComponent.h"
 #include "Equipments/DS1Weapon.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -45,6 +46,9 @@ ADS1Character::ADS1Character()
 	AttributeComponent = CreateDefaultSubobject<UDS1AttributeActorComponent>(TEXT("Attribute"));
 	StateComponent = CreateDefaultSubobject<UDS1StateComponent>(TEXT("State"));
 	CombatComponent = CreateDefaultSubobject<UDS1CombatComponent>(TEXT("Combat"));
+
+	// LockedOn Targeting
+	TargetingComponent = CreateDefaultSubobject<UDS1TargetingComponent>(TEXT("Targeting"));
 }
 
 void ADS1Character::BeginPlay()
@@ -112,6 +116,11 @@ void ADS1Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &ADS1Character::SpecialAttack);
 		// 강력한 공격
 		EnhancedInputComponent->BindAction(HeavyAttackAction, ETriggerEvent::Triggered, this, &ADS1Character::HeavyAttack);
+
+		// LockOn 관련 액션 바인딩
+		EnhancedInputComponent->BindAction(LockOnTargetAction, ETriggerEvent::Started, this, &ADS1Character::LockOnTarget);
+		EnhancedInputComponent->BindAction(LeftTargetAction, ETriggerEvent::Started, this, &ADS1Character::LeftTarget);
+		EnhancedInputComponent->BindAction(RightTargetAction, ETriggerEvent::Started, this, &ADS1Character::RightTarget);
 	}
 }
 
@@ -164,7 +173,13 @@ void ADS1Character::Move(const FInputActionValue& Values)
 
 void ADS1Character::Look(const FInputActionValue& Values)
 {
-	FVector2D LookVector = Values.Get<FVector2D>();
+	// Locked On 상태에서 Look 입력을 처리하지 않음
+	if (TargetingComponent && TargetingComponent->IsLockOn())
+	{
+		return;
+	}
+
+	const FVector2D LookVector = Values.Get<FVector2D>();
 	if (Controller != nullptr)
 	{
 		const float YawInput = LookVector.X;
@@ -331,6 +346,35 @@ void ADS1Character::HeavyAttack()
 	if (CanPerformAttack(AttackTypeTag))
 	{
 		ExecuteComboAttack(AttackTypeTag);
+	}
+}
+
+void ADS1Character::LockOnTarget()
+{
+	TargetingComponent->ToggleLockOn();
+}
+
+void ADS1Character::LeftTarget()
+{
+	if (TargetingComponent)
+	{
+		TargetingComponent->SwitchingLockedOnActor(ESwitchingDirection::Left);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TargetingComponent is not valid!"));
+	}
+}
+
+void ADS1Character::RightTarget()
+{
+	if (TargetingComponent)
+	{
+		TargetingComponent->SwitchingLockedOnActor(ESwitchingDirection::Right);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("TargetingComponent is not valid!"));
 	}
 }
 

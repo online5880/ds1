@@ -2,6 +2,7 @@
 
 #include "Animation/DS1AnimInstance.h"
 
+#include "KismetAnimationLibrary.h"
 #include "Character/DS1Character.h"
 #include "Components/DS1StateComponent.h"
 #include "GameFramework/Character.h"
@@ -40,8 +41,10 @@ void UDS1AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	GroundSpeed = Velocity.Size2D();
 	
 	bShouldMove = GroundSpeed > 3.f && MovementComponent->GetCurrentAcceleration() != FVector::ZeroVector;
-	
+	 
 	bIsFalling = MovementComponent->IsFalling();
+
+	Direction = UKismetAnimationLibrary::CalculateDirection(Velocity, Character->GetActorRotation());
 }
 
 void UDS1AnimInstance::AnimNotify_ResetMovementInput()

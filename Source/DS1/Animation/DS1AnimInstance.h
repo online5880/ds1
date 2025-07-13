@@ -22,19 +22,21 @@ protected:
 	class UCharacterMovementComponent* MovementComponent;
 
 protected:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement Data")
 	FVector Velocity;
 
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement Data")
 	float GroundSpeed;
-
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation")
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement Data")
 	bool bShouldMove;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Animation")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement Data")
 	bool bIsFalling;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement Data")
+	float Direction;
 
 public:
 	UDS1AnimInstance();

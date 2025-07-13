@@ -1,8 +1,11 @@
 ﻿#include "DS1Enemy.h"
 
+#include "DS1GameplayTags.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/DS1AttributeActorComponent.h"
 #include "Components/DS1StateComponent.h"
+#include "Components/SphereComponent.h"
+#include "Components/WidgetComponent.h"
 #include "Engine/DamageEvents.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -13,6 +16,21 @@
 ADS1Enemy::ADS1Enemy()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	// Targeting 구체 생성 및 Collision 설정
+	TargetingSphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("TargetingSphere"));
+	TargetingSphereComponent->SetupAttachment(RootComponent);
+	TargetingSphereComponent->SetCollisionObjectType(COLLISION_OBJECT_TARGETING);
+	TargetingSphereComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
+	TargetingSphereComponent->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+
+	// Lock On UI 위젯 컴포넌트 생성
+	LockOnWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("LockOnWidgetComponent"));
+	LockOnWidgetComponent->SetupAttachment(RootComponent);
+	LockOnWidgetComponent->SetRelativeLocation(FVector(0.f,0.f,50.f));
+	LockOnWidgetComponent->SetDrawSize(FVector2D(30.f,30.f));
+	LockOnWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	LockOnWidgetComponent->SetVisibility(false);
 
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
@@ -154,5 +172,23 @@ UAnimMontage* ADS1Enemy::GetHitReactAnimation(const AActor* Attacker) const
 	}
 
 	return SelectMontage;
+}
+
+void ADS1Enemy::OnTargeted(bool bTargeted)
+{
+	if (LockOnWidgetComponent)
+	{
+		LockOnWidgetComponent->SetVisibility(bTargeted);
+	}
+}
+
+bool ADS1Enemy::CanBeTargeted()
+{
+	if (!StateComponent) return false;
+
+	FGameplayTagContainer TagCheck;
+	TagCheck.AddTag(DS1GameplayTags::Character_State_Death);
+	return StateComponent->IsCurrentStateEqualToAny(TagCheck) == false;
+	
 }
 
