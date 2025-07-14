@@ -34,8 +34,8 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Effect")
 	UParticleSystem* ImpactParticle;
-
 // Montage Section
+
 protected:
 	UPROPERTY(EditAnywhere, Category = "Montage | HitReact")
 	UAnimMontage* HitReactAnimFront;
