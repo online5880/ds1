@@ -50,7 +50,6 @@ protected:
 	UAnimMontage* HitReactAnimRight;
 
 public:
-
 	ADS1Enemy();
 
 protected:
