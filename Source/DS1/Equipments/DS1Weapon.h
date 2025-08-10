@@ -1,8 +1,6 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+﻿#pragma once
 
-#pragma once
-
-
+#include "DS1Define.h"
 #include "DS1Equipment.h"
 #include "GameplayTagContainer.h"
 #include "DS1Weapon.generated.h"
@@ -22,13 +20,20 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Equipment | Socket")
 	FName UnequipSocketName;
 
+	// Combat Type
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Equipment | Socket")
+	ECombatType CombatType = ECombatType::SwordShield;
+
 	UPROPERTY(Editanywhere, BlueprintReadWrite, Category = "Equipment | Animation")
 	UDS1MontageActionData* MontageActionData;
 
 // Component Section
 protected:
 	UPROPERTY(VisibleAnywhere)
-	UDS1WeaponCollisionComponent* WeaponCollisionComponent;
+	UDS1WeaponCollisionComponent* WeaponCollision;
+
+	UPROPERTY(VisibleAnywhere)
+	UDS1WeaponCollisionComponent* SecondWeaponCollision;
 	
 	UPROPERTY()
 	class UDS1CombatComponent* CombatComponent;
@@ -59,7 +64,11 @@ public:
 
 	FORCEINLINE FName GetEquipSocketName() const { return EquipSocketName; }
 	FORCEINLINE FName GetUnequipSocketName() const { return UnequipSocketName; }
-	FORCEINLINE UDS1WeaponCollisionComponent* GetWeaponCollisionComponent() const { return WeaponCollisionComponent; }
+	FORCEINLINE UDS1WeaponCollisionComponent* GetWeaponCollisionComponent() const { return WeaponCollision; }
+
+public:
+	virtual void ActivateCollision(EWeaponCollisionType InCollisionType);
+	virtual void DeactivateCollision(EWeaponCollisionType InCollisionType);
 
 public:
 	// 무기의 Collision에 검출된 액터에 대한 데미지를 적용
