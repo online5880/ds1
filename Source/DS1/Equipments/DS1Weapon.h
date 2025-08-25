@@ -66,6 +66,8 @@ public:
 	FORCEINLINE FName GetUnequipSocketName() const { return UnequipSocketName; }
 	FORCEINLINE UDS1WeaponCollisionComponent* GetWeaponCollisionComponent() const { return WeaponCollision; }
 
+	FORCEINLINE ECombatType GetCombatType() const { return CombatType; }
+
 public:
 	virtual void ActivateCollision(EWeaponCollisionType InCollisionType);
 	virtual void DeactivateCollision(EWeaponCollisionType InCollisionType);

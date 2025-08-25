@@ -10,6 +10,7 @@
 #include "Components/DS1AttributeActorComponent.h"
 #include "Components/DS1StateComponent.h"
 #include "Components/DS1TargetingComponent.h"
+#include "Equipments/DS1FistWeapon.h"
 #include "Equipments/DS1Weapon.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -55,6 +56,7 @@ void ADS1Character::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// Player HUD 생성
 	if (PlayerHUDWidgetClass)
 	{
 		PlayerHUDWidget = CreateWidget<UDS1PlayerHUDWidget>(GetWorld(), PlayerHUDWidgetClass);
@@ -62,6 +64,14 @@ void ADS1Character::BeginPlay()
 		{
 			PlayerHUDWidget->AddToViewport();
 		}
+	}
+
+	if (FistWeaponClass)
+	{
+		FActorSpawnParameters SpawnParameters;
+		SpawnParameters.Owner = this;
+		ADS1FistWeapon* FistWeapon = GetWorld()->SpawnActor<ADS1FistWeapon>(FistWeaponClass, GetActorTransform(), SpawnParameters);
+		FistWeapon->EquipItem();
 	}
 }
 
@@ -136,6 +146,16 @@ bool ADS1Character::IsMoving() const
 bool ADS1Character::CanToggleCombat() const
 {
 	check(StateComponent);
+
+	if (IsValid(CombatComponent->GetMainWeapon()) == false)
+	{
+		return false;
+	}
+
+	if (CombatComponent->GetMainWeapon()->GetCombatType() == ECombatType::MeleeFists)
+	{
+		return false;
+	}
 
 	FGameplayTagContainer CheckTags;
 	CheckTags.AddTag(DS1GameplayTags::Character_State_Attacking);
@@ -506,4 +526,21 @@ void ADS1Character::AttackFinished(const float ComboResetDelay)
 	}
 	// ComboResetDelay 후에 콤보 시퀀스 종료
 	GetWorld()->GetTimerManager().SetTimer(ComboResetTimerHandle, this, &ThisClass::ResetCombo, ComboResetDelay, false);
+}
+
+void ADS1Character::ActivateWeaponCollision(EWeaponCollisionType WeaponCollisionType)
+{
+	if (CombatComponent)
+	{
+		CombatComponent->GetMainWeapon()->ActivateCollision(WeaponCollisionType);
+	}
+}
+
+void ADS1Character::DeactivateWeaponCollision(EWeaponCollisionType WeaponCollisionType)
+{
+	if (CombatComponent)
+	{
+		 CombatComponent->GetMainWeapon()->DeactivateCollision(WeaponCollisionType);
+	}
+	
 }

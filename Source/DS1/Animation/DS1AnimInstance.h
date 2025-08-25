@@ -2,6 +2,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "DS1Define.h"
 #include "Animation/AnimInstance.h"
 #include "DS1AnimInstance.generated.h"
 
@@ -37,6 +38,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement Data")
 	float Direction;
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat Data")
+	bool bCombatEnabled = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Combat Data")
+	ECombatType CombatType = ECombatType::None;
 
 public:
 	UDS1AnimInstance();
@@ -50,4 +57,10 @@ public:
 
 	UFUNCTION()
 	void AnimNotify_ResetState();
+
+public:
+	void UpdateCombatMode(const ECombatType InCombatType);
+
+protected:
+	void OnChangedCombat(const bool bInCombatEnabled);
 };

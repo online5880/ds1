@@ -1,11 +1,6 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+﻿#include "AnimNotifyState_DS1WeaponCollision.h"
+#include "Interfaces/DS1CombatInterface.h"
 
-
-#include "AnimNotifyState_DS1WeaponCollision.h"
-
-#include "Components/DS1CombatComponent.h"
-#include "Components/DS1WeaponCollisionComponent.h"
-#include "Equipments/DS1Weapon.h"
 
 UAnimNotifyState_DS1WeaponCollision::UAnimNotifyState_DS1WeaponCollision(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -17,15 +12,11 @@ void UAnimNotifyState_DS1WeaponCollision::NotifyBegin(USkeletalMeshComponent* Me
 {
 	Super::NotifyBegin(MeshComp, Animation, TotalDuration, EventReference);
 
-	if (const AActor* OwnerActor = MeshComp->GetOwner())
+	if (AActor* OwnerActor = MeshComp->GetOwner())
 	{
-		if (const UDS1CombatComponent* CombatComponent = OwnerActor->GetComponentByClass<UDS1CombatComponent>())
+		if (IDS1CombatInterface* CombatInterface = Cast<IDS1CombatInterface>(OwnerActor))
 		{
-			const ADS1Weapon* Weapon = CombatComponent->GetMainWeapon();
-			if (::IsValid(Weapon))
-			{
-				Weapon->GetWeaponCollisionComponent()->TurnOnCollision();
-			}
+			CombatInterface->ActivateWeaponCollision(CollisionType);
 		}
 	}
 }
@@ -35,15 +26,11 @@ void UAnimNotifyState_DS1WeaponCollision::NotifyEnd(USkeletalMeshComponent* Mesh
 {
 	Super::NotifyEnd(MeshComp, Animation, EventReference);
 
-	if (const AActor* OwnerActor = MeshComp->GetOwner())
+	if (AActor* OwnerActor = MeshComp->GetOwner())
 	{
-		if (const UDS1CombatComponent* CombatComponent = OwnerActor->GetComponentByClass<UDS1CombatComponent>())
+		if (IDS1CombatInterface* CombatInterface = Cast<IDS1CombatInterface>(OwnerActor))
 		{
-			const ADS1Weapon* Weapon = CombatComponent->GetMainWeapon();
-			if (::IsValid(Weapon))
-			{
-				Weapon->GetWeaponCollisionComponent()->TurnOffCollision();
-			}
+			CombatInterface->DeactivateWeaponCollision(CollisionType);
 		}
 	}
 }

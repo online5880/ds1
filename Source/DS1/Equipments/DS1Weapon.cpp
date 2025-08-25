@@ -50,7 +50,7 @@ void ADS1Weapon::EquipItem()
 		{
 			if (UDS1AnimInstance* Anim = Cast<UDS1AnimInstance>(OwnerCharacter->GetMesh()->GetAnimInstance()))
 			{
-				// Anim->UpdateCombatMode(CombatType);
+				Anim->UpdateCombatMode(CombatType);
 			}
 		}
 		// 무기를 소유한 OwnerActor를 충돌에서 제외

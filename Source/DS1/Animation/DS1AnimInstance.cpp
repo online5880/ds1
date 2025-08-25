@@ -1,12 +1,12 @@
-
-
 #include "Animation/DS1AnimInstance.h"
 
 #include "KismetAnimationLibrary.h"
 #include "Character/DS1Character.h"
+#include "Components/DS1CombatComponent.h"
 #include "Components/DS1StateComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include UE_INLINE_GENERATED_CPP_BY_NAME(DS1AnimInstance)
 
 UDS1AnimInstance::UDS1AnimInstance()
 {
@@ -20,6 +20,10 @@ void UDS1AnimInstance::NativeInitializeAnimation()
 	if (Character)
 	{
 		MovementComponent = Character->GetCharacterMovement();
+		if (UDS1CombatComponent* CombatComponent = Character->GetComponentByClass<UDS1CombatComponent>())
+		{
+			CombatComponent->OnChangedCombat.AddUObject(this,&ThisClass::OnChangedCombat);
+		}
 	}
 }
 
@@ -61,5 +65,15 @@ void UDS1AnimInstance::AnimNotify_ResetState()
 	{
 		LocalCharacter->GetStateComponent()->ClearState();
 	}
+}
+
+void UDS1AnimInstance::UpdateCombatMode(const ECombatType InCombatType)
+{
+	CombatType = InCombatType;
+}
+
+void UDS1AnimInstance::OnChangedCombat(const bool bInCombatEnabled)
+{
+	bCombatEnabled = bInCombatEnabled;
 }
 

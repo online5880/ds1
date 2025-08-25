@@ -3,6 +3,7 @@
 #include "Character/DS1Character.h"
 #include "Equipments/DS1Weapon.h"
 #include "Items/DS1PickupItem.h"
+#include UE_INLINE_GENERATED_CPP_BY_NAME(DS1CombatComponent)
 
 UDS1CombatComponent::UDS1CombatComponent()
 {
@@ -28,7 +29,7 @@ void UDS1CombatComponent::SetWeapon(ADS1Weapon* NewWeapon)
 {
 	if (::IsValid(MainWeapon))
 	{
-		if (ADS1Character* OwnerCharacter = Cast<ADS1Character>(GetOwner()))
+		if (const ADS1Character* OwnerCharacter = Cast<ADS1Character>(GetOwner()))
 		{
 			ADS1PickupItem* PickupItem = GetWorld()->SpawnActorDeferred<ADS1PickupItem>(ADS1PickupItem::StaticClass(), OwnerCharacter->GetTransform(), nullptr, nullptr , ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
 			PickupItem->SetEquipmentClass(MainWeapon->GetClass());
@@ -38,5 +39,14 @@ void UDS1CombatComponent::SetWeapon(ADS1Weapon* NewWeapon)
 		}
 	}
 	MainWeapon = NewWeapon;
+}
+
+void UDS1CombatComponent::SetCombatEnabled(const bool bEnabled)
+{
+	bCombatEnabled = bEnabled;
+	if (OnChangedCombat.IsBound())
+	{
+		OnChangedCombat.Broadcast(bCombatEnabled);
+	}
 }
 

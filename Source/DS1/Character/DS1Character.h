@@ -4,13 +4,14 @@
 
 #include "GameplayTagContainer.h"
 #include "GameFramework/Character.h"
+#include "Interfaces/DS1CombatInterface.h"
 #include "DS1Character.generated.h"
 
-
+class ADS1FistWeapon;
 struct FInputActionValue;
 
 UCLASS()
-class DS1_API ADS1Character : public ACharacter
+class DS1_API ADS1Character : public ACharacter, public IDS1CombatInterface
 {
 	GENERATED_BODY()
 
@@ -78,6 +79,11 @@ protected:
 
 	UPROPERTY()
 	class UDS1PlayerHUDWidget* PlayerHUDWidget;
+
+// 주먹 무기
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<ADS1FistWeapon> FistWeaponClass;
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "Sprinting")
@@ -178,6 +184,10 @@ public:
 	void EnableComboWindow();
 	void DisableComboWindow();
 	void AttackFinished(const float ComboResetDelay);
+
+public:
+	virtual void ActivateWeaponCollision(EWeaponCollisionType WeaponCollisionType) override;
+	virtual void DeactivateWeaponCollision(EWeaponCollisionType WeaponCollisionType) override;
 	
 };
 
