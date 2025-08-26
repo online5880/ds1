@@ -17,7 +17,8 @@ public class DS1 : ModuleRules
 			"Engine",
 			"InputCore", 
 			"EnhancedInput",
-			"GameplayTags"
+			"GameplayTags",
+			"AIModule",
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "AnimGraphRuntime" });

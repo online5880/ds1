@@ -4,6 +4,7 @@
 #include "Interfaces/DS1Targeting.h"
 #include "DS1Enemy.generated.h"
 
+class ATargetPoint;
 /**
  *  적 캐릭터 클래스
  */
@@ -49,6 +50,13 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Montage | HitReact")
 	UAnimMontage* HitReactAnimRight;
 
+protected:
+	UPROPERTY(EditAnywhere, Category = "AI | Patrol")
+	TArray<ATargetPoint*> PatrolPoints;
+
+	UPROPERTY(VisibleAnywhere, Category = "AI | Patrol")
+	int32 PatrolIndex = 0;
+	
 public:
 	ADS1Enemy();
 
@@ -75,5 +83,15 @@ public:
 	virtual void OnTargeted(bool bTargeted) override;
 	// 타겟팅 가능한지 체크
 	virtual bool CanBeTargeted() override;
+
+public:
+	FORCEINLINE ATargetPoint* GetPatrolPoint()
+	{
+		return PatrolPoints.Num() >= (PatrolIndex + 1) ? PatrolPoints[PatrolIndex] : nullptr;
+	}
+	FORCEINLINE void IncrementPatrolPointIndex()
+	{
+		PatrolIndex = (PatrolIndex + 1) % (PatrolPoints.Num());
+	}
 	
 };
