@@ -86,6 +86,12 @@ protected:
 	TSubclassOf<ADS1FistWeapon> FistWeaponClass;
 
 protected:
+	UPROPERTY(EditAnywhere, Category="Effect")
+	USoundCue* ImpactSound;
+
+	UPROPERTY(EditAnywhere, Category = "Effect")
+	UParticleSystem* ImpactParticle;
+protected:
 	UPROPERTY(EditAnywhere, Category = "Sprinting")
 	float SprintSpeed = 750.f; // 스프린트 속도
 
@@ -134,6 +140,11 @@ public:
 
 public:
 	FORCEINLINE UDS1StateComponent* GetStateComponent() const { return StateComponent; }
+
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+	void ImpactEffect(const FVector& Location) const;
+	void HitReaction(const AActor* Attacker);
+	void OnDeath();
 
 protected:
 	/** 캐릭터가 이동중인지 체크 */

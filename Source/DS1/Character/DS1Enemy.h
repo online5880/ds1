@@ -1,15 +1,17 @@
 ﻿#pragma once
 
 #include "GameFramework/Character.h"
+#include "Interfaces/DS1CombatInterface.h"
 #include "Interfaces/DS1Targeting.h"
 #include "DS1Enemy.generated.h"
 
+class ADS1Weapon;
 class ATargetPoint;
 /**
  *  적 캐릭터 클래스
  */
 UCLASS()
-class DS1_API ADS1Enemy : public ACharacter, public IDS1Targeting
+class DS1_API ADS1Enemy : public ACharacter, public IDS1Targeting, public IDS1CombatInterface
 {
 	GENERATED_BODY()
 
@@ -18,11 +20,14 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = "Targeting")
 	class USphereComponent* TargetingSphereComponent;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	class UDS1AttributeActorComponent* AttributeComponent;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	class UDS1StateComponent* StateComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	class UDS1CombatComponent* CombatComponent;
 
 	// Lock On UI Widget
 	UPROPERTY(VisibleAnywhere, Category = "Targeting")
@@ -35,27 +40,18 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Effect")
 	UParticleSystem* ImpactParticle;
-// Montage Section
-
-protected:
-	UPROPERTY(EditAnywhere, Category = "Montage | HitReact")
-	UAnimMontage* HitReactAnimFront;
-
-	UPROPERTY(EditAnywhere, Category = "Montage | HitReact")
-	UAnimMontage* HitReactAnimBack;
-
-	UPROPERTY(EditAnywhere, Category = "Montage | HitReact")
-	UAnimMontage* HitReactAnimLeft;
-
-	UPROPERTY(EditAnywhere, Category = "Montage | HitReact")
-	UAnimMontage* HitReactAnimRight;
-
+	
 protected:
 	UPROPERTY(EditAnywhere, Category = "AI | Patrol")
 	TArray<ATargetPoint*> PatrolPoints;
 
 	UPROPERTY(VisibleAnywhere, Category = "AI | Patrol")
 	int32 PatrolIndex = 0;
+
+protected:
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	TSubclassOf<ADS1Weapon> DefaultWeaponClass;
+	
 	
 public:
 	ADS1Enemy();
@@ -75,7 +71,6 @@ public:
 protected:
 	void ImpactEffect(const FVector& Location);
 	void HitReact(const AActor* Attacker);
-	UAnimMontage* GetHitReactAnimation(const AActor* Attacker) const;
 
 public:
 	// IDS1Targeting Interface 구현
@@ -83,6 +78,11 @@ public:
 	virtual void OnTargeted(bool bTargeted) override;
 	// 타겟팅 가능한지 체크
 	virtual bool CanBeTargeted() override;
+
+	// IDS1CombatInterface 구현
+	virtual void ActivateWeaponCollision(EWeaponCollisionType WeaponCollisionType) override;
+	virtual void DeactivateWeaponCollision(EWeaponCollisionType WeaponCollisionType) override;
+	virtual void PerformAttack(FGameplayTag& AttackTypeTag, FOnMontageEnded& MontageEndedDelegate) override;
 
 public:
 	FORCEINLINE ATargetPoint* GetPatrolPoint()
@@ -93,5 +93,4 @@ public:
 	{
 		PatrolIndex = (PatrolIndex + 1) % (PatrolPoints.Num());
 	}
-	
 };

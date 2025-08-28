@@ -27,6 +27,7 @@ protected:
 	TMap<FGameplayTag, FDS1MontageGroup> MontageGroupMap;
 
 public:
-	UAnimMontage* GetMontageForTag(const FGameplayTag& GroupTag, const int32 Index);
+	UAnimMontage* GetMontageForTag(const FGameplayTag& GroupTag, const int32 Index) const;
+	UAnimMontage* GetRandomMontageForTag(const FGameplayTag& GroupTag) const;
 	
 };

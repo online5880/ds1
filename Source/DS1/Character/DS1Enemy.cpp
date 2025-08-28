@@ -3,10 +3,12 @@
 #include "DS1GameplayTags.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/DS1AttributeActorComponent.h"
+#include "Components/DS1CombatComponent.h"
 #include "Components/DS1StateComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Engine/DamageEvents.h"
+#include "Equipments/DS1Weapon.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Sound/SoundCue.h"
@@ -37,6 +39,7 @@ ADS1Enemy::ADS1Enemy()
 
 	AttributeComponent = CreateDefaultSubobject<UDS1AttributeActorComponent>(TEXT("Attribute"));
 	StateComponent = CreateDefaultSubobject<UDS1StateComponent>(TEXT("State"));
+	CombatComponent = CreateDefaultSubobject<UDS1CombatComponent>(TEXT("Combat"));
 
 	// OnDeath 델리게이트 바인딩
 	AttributeComponent->OnDeath.AddUObject(this, &ThisClass::OnDeath);
@@ -45,7 +48,17 @@ ADS1Enemy::ADS1Enemy()
 void ADS1Enemy::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	// 무기 장착
+	if (DefaultWeaponClass)
+	{
+		FActorSpawnParameters Params;
+		Params.Owner = this;
+
+		ADS1Weapon* Weapon = GetWorld()->SpawnActor<ADS1Weapon>(DefaultWeaponClass,GetActorTransform(),Params);
+		CombatComponent->SetCombatEnabled(true);
+		Weapon->EquipItem();
+	}
 }
 
 void ADS1Enemy::Tick(float DeltaTime)
@@ -118,60 +131,12 @@ void ADS1Enemy::ImpactEffect(const FVector& Location)
 
 void ADS1Enemy::HitReact(const AActor* Attacker)
 {
-	if (UAnimMontage* HitReactAnimMontage = GetHitReactAnimation(Attacker))
+	check(CombatComponent)
+	
+	if (UAnimMontage* HitReactAnimMontage = CombatComponent->GetMainWeapon()->GetHitReactMontage(Attacker))
 	{
-		float DelaySeconds = PlayAnimMontage(HitReactAnimMontage);
+		PlayAnimMontage(HitReactAnimMontage);
 	}
-}
-
-UAnimMontage* ADS1Enemy::GetHitReactAnimation(const AActor* Attacker) const
-{
-	// LookAt 회전값 (현재 Actor가 공격자를 바라보는 회전값)
-	const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Attacker->GetActorLocation());
-	// 현재 Actor의 회전값과 LookAt 회전값의 차이
-	const FRotator DeltaRotation = UKismetMathLibrary::NormalizedDeltaRotator(GetActorRotation(), LookAtRotation);
-	// Z축 회전값
-	const float DeltaZ = DeltaRotation.Yaw;
-
-	EHitDirection HitDirection = EHitDirection::Front;
-
-	if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -45.f, 45.f))
-	{
-		HitDirection = EHitDirection::Front;
-	}
-	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, 45.f, 135.f))
-	{
-		HitDirection = EHitDirection::Right;
-	}
-	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -135.f, -45.f))
-	{
-		HitDirection = EHitDirection::Left;
-	}
-	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, 135.f, 180.f) || UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -180.f, -135.f))
-	{
-		HitDirection = EHitDirection::Back;
-	}
-
-	UAnimMontage* SelectMontage = nullptr;
-	switch (HitDirection)
-	{
-	case EHitDirection::Front:
-		SelectMontage = HitReactAnimFront;
-		break;
-	case EHitDirection::Back:
-		SelectMontage = HitReactAnimBack;
-		break;
-	case EHitDirection::Left:
-		SelectMontage = HitReactAnimLeft;
-		break;
-	case EHitDirection::Right:
-		SelectMontage = HitReactAnimRight;
-		break;
-	default:
-		break;
-	}
-
-	return SelectMontage;
 }
 
 void ADS1Enemy::OnTargeted(bool bTargeted)
@@ -190,5 +155,48 @@ bool ADS1Enemy::CanBeTargeted()
 	TagCheck.AddTag(DS1GameplayTags::Character_State_Death);
 	return StateComponent->IsCurrentStateEqualToAny(TagCheck) == false;
 	
+}
+
+void ADS1Enemy::ActivateWeaponCollision(EWeaponCollisionType WeaponCollisionType)
+{
+	if (CombatComponent)
+	{
+		CombatComponent->GetMainWeapon()->ActivateCollision(WeaponCollisionType);
+	}
+}
+
+void ADS1Enemy::DeactivateWeaponCollision(EWeaponCollisionType WeaponCollisionType)
+{
+	if (CombatComponent)
+	{
+		CombatComponent->GetMainWeapon()->ActivateCollision(WeaponCollisionType);
+	}
+}
+
+void ADS1Enemy::PerformAttack(FGameplayTag& AttackTypeTag, FOnMontageEnded& MontageEndedDelegate)
+{
+	check(StateComponent)
+	check(AttributeComponent)
+	check(CombatComponent)
+
+	if (const ADS1Weapon* Weapon = CombatComponent->GetMainWeapon())
+	{
+		StateComponent->SetState(DS1GameplayTags::Character_State_Attacking);
+		CombatComponent->SetLastAttackType(AttackTypeTag);
+		AttributeComponent->ToggleStaminaRegeneration(false);
+
+		if (UAnimMontage* Montage = Weapon->GetRandomMontageForTag(AttackTypeTag))
+		{
+			if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+			{
+				AnimInstance->Montage_Play(Montage);
+				AnimInstance->Montage_SetEndDelegate(MontageEndedDelegate, Montage);
+			}
+		}
+
+		const float StaminaCost = Weapon->GetStaminaCostForTag(AttackTypeTag);
+		AttributeComponent->DecreaseStamina(StaminaCost);
+		AttributeComponent->ToggleStaminaRegeneration(true, 1.5f);
+	}
 }
 

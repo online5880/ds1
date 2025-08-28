@@ -6,16 +6,20 @@
 #include "EnhancedInputSubsystems.h"
 #include "Blueprint/UserWidget.h"
 #include "Camera/CameraComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/DS1CombatComponent.h"
 #include "Components/DS1AttributeActorComponent.h"
 #include "Components/DS1StateComponent.h"
 #include "Components/DS1TargetingComponent.h"
+#include "Engine/DamageEvents.h"
 #include "Equipments/DS1FistWeapon.h"
 #include "Equipments/DS1Weapon.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Interfaces/DS1Interact.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Sound/SoundCue.h"
 #include "UI/DS1PlayerHUDWidget.h"
 
 
@@ -50,6 +54,9 @@ ADS1Character::ADS1Character()
 
 	// LockedOn Targeting
 	TargetingComponent = CreateDefaultSubobject<UDS1TargetingComponent>(TEXT("Targeting"));
+
+	// OnDeath Delegate 함수 바인딩
+	AttributeComponent->OnDeath.AddUObject(this, &ThisClass::OnDeath);
 }
 
 void ADS1Character::BeginPlay()
@@ -131,6 +138,82 @@ void ADS1Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 		EnhancedInputComponent->BindAction(LockOnTargetAction, ETriggerEvent::Started, this, &ADS1Character::LockOnTarget);
 		EnhancedInputComponent->BindAction(LeftTargetAction, ETriggerEvent::Started, this, &ADS1Character::LeftTarget);
 		EnhancedInputComponent->BindAction(RightTargetAction, ETriggerEvent::Started, this, &ADS1Character::RightTarget);
+	}
+}
+
+float ADS1Character::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
+	class AController* EventInstigator, AActor* DamageCauser)
+{
+	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	if (AttributeComponent)
+	{
+		AttributeComponent->TakeDamageAmount(ActualDamage);
+		GEngine->AddOnScreenDebugMessage(0, 1.5f, FColor::Cyan, FString::Printf(TEXT("Damaged : %f"), ActualDamage));
+	}
+	
+	StateComponent->SetState(DS1GameplayTags::Character_State_Hit);
+	StateComponent->ToggleMovementInput(false);
+
+	if (DamageEvent.IsOfType(FPointDamageEvent::ClassID))
+	{
+		const FPointDamageEvent* PointDamageEvent = static_cast<const FPointDamageEvent*>(&DamageEvent);
+
+		// 데미지 방향
+		FVector ShotDirection = PointDamageEvent->ShotDirection;
+		// 히트 위치 (표면 접촉 관점)
+		FVector ImpactPoint = PointDamageEvent->HitInfo.ImpactPoint;
+		// 히트 방향
+		FVector ImpactDirection = PointDamageEvent->HitInfo.ImpactNormal;
+		// 히트한 객채의 Location (객체 중심 관점)
+		FVector HitLocation = PointDamageEvent->HitInfo.Location;
+
+		ImpactEffect(ImpactPoint);
+
+		HitReaction(EventInstigator->GetPawn());
+	}
+	return ActualDamage;
+}
+
+void ADS1Character::ImpactEffect(const FVector& Location) const
+{
+	if (const UWorld* World = GetWorld())
+	{
+		if (ImpactSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(World, ImpactSound, Location);
+		}
+
+		if (ImpactParticle)
+		{
+			UGameplayStatics::SpawnEmitterAtLocation(World, ImpactParticle, Location);
+		}
+	}
+}
+
+void ADS1Character::HitReaction(const AActor* Attacker)
+{
+	check(CombatComponent)
+
+	if (UAnimMontage* HitReactAnimMontage = CombatComponent->GetMainWeapon()->GetHitReactMontage(Attacker))
+	{
+		PlayAnimMontage(HitReactAnimMontage);
+	}
+}
+
+void ADS1Character::OnDeath()
+{
+	if (UCapsuleComponent* CapsuleComp = GetCapsuleComponent())
+	{
+		CapsuleComp->SetCollisionEnabled(ECollisionEnabled::Type::NoCollision);
+	}
+
+	// Ragdoll
+	if (USkeletalMeshComponent* MeshComp = GetMesh())
+	{
+		MeshComp->SetCollisionProfileName("Ragdoll");
+		MeshComp->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+		MeshComp->SetSimulatePhysics(true);
 	}
 }
 
@@ -422,6 +505,7 @@ bool ADS1Character::CanPerformAttack(const FGameplayTag& AttackType) const
 	FGameplayTagContainer CheckTags;
 	CheckTags.AddTag(DS1GameplayTags::Character_State_Rolling);
 	CheckTags.AddTag(DS1GameplayTags::Character_State_GeneralAction);
+	CheckTags.AddTag(DS1GameplayTags::Character_State_Hit);
 
 	const float StaminaCost = CombatComponent->GetMainWeapon()->GetStaminaCostForTag(AttackType);
 

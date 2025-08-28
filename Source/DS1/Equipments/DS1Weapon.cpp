@@ -7,6 +7,7 @@
 #include "Components/DS1WeaponCollisionComponent.h"
 #include "Data/DS1MontageActionData.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(DS1Weapon)
 
@@ -46,7 +47,7 @@ void ADS1Weapon::EquipItem()
 		WeaponCollision->SetWeaponMesh(Mesh);
 
 		// 장착한 무기의 CombatTyp으로 업데이트
-		if (ADS1Character* OwnerCharacter = Cast<ADS1Character>(GetOwner()))
+		if (const ACharacter* OwnerCharacter = Cast<ACharacter>(GetOwner()))
 		{
 			if (UDS1AnimInstance* Anim = Cast<UDS1AnimInstance>(OwnerCharacter->GetMesh()->GetAnimInstance()))
 			{
@@ -61,6 +62,61 @@ void ADS1Weapon::EquipItem()
 UAnimMontage* ADS1Weapon::GetMontageForTag(const FGameplayTag& Tag, const int32 Index) const
 {
 	return MontageActionData->GetMontageForTag(Tag, Index);
+}
+
+UAnimMontage* ADS1Weapon::GetRandomMontageForTag(const FGameplayTag& Tag) const
+{
+	return MontageActionData->GetRandomMontageForTag(Tag);
+}
+
+UAnimMontage* ADS1Weapon::GetHitReactMontage(const AActor* Attacker) const
+{
+	// LookAt 회전값 (현재 Actor가 공격자를 바라보는 회전값)
+	const FRotator LookAtRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), Attacker->GetActorLocation());
+	// 현재 Actor의 회전값과 LookAt 회전값의 차이
+	const FRotator DeltaRotation = UKismetMathLibrary::NormalizedDeltaRotator(GetActorRotation(), LookAtRotation);
+	// Z축 회전값
+	const float DeltaZ = DeltaRotation.Yaw;
+
+	EHitDirection HitDirection = EHitDirection::Front;
+
+	if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -45.f, 45.f))
+	{
+		HitDirection = EHitDirection::Front;
+	}
+	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, 45.f, 135.f))
+	{
+		HitDirection = EHitDirection::Right;
+	}
+	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -135.f, -45.f))
+	{
+		HitDirection = EHitDirection::Left;
+	}
+	else if (UKismetMathLibrary::InRange_FloatFloat(DeltaZ, 135.f, 180.f) || UKismetMathLibrary::InRange_FloatFloat(DeltaZ, -180.f, -135.f))
+	{
+		HitDirection = EHitDirection::Back;
+	}
+
+	UAnimMontage* SelectMontage = nullptr;
+	switch (HitDirection)
+	{
+	case EHitDirection::Front:
+		SelectMontage = GetMontageForTag(DS1GameplayTags::Character_Action_HitReaction, 0);
+		break;
+	case EHitDirection::Back:
+		SelectMontage = GetMontageForTag(DS1GameplayTags::Character_Action_HitReaction, 1);
+		break;
+	case EHitDirection::Left:
+		SelectMontage = GetMontageForTag(DS1GameplayTags::Character_Action_HitReaction, 2);
+		break;
+	case EHitDirection::Right:
+		SelectMontage = GetMontageForTag(DS1GameplayTags::Character_Action_HitReaction, 3);
+		break;
+	default:
+		break;
+	}
+
+	return SelectMontage;
 }
 
 float ADS1Weapon::GetStaminaCostForTag(const FGameplayTag& Tag) const

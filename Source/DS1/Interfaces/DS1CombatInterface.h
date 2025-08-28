@@ -4,6 +4,8 @@
 #include "UObject/Interface.h"
 #include "DS1CombatInterface.generated.h"
 
+struct FGameplayTag;
+
 UINTERFACE()
 class UDS1CombatInterface : public UInterface
 {
@@ -22,4 +24,6 @@ public:
 	virtual void ActivateWeaponCollision(EWeaponCollisionType WeaponCollisionType) = 0;
 	
 	virtual void DeactivateWeaponCollision(EWeaponCollisionType WeaponCollisionType) = 0;
+
+	virtual void PerformAttack(FGameplayTag& AttackTypeTag, FOnMontageEnded& MontageEndedDelegate) {}
 };
