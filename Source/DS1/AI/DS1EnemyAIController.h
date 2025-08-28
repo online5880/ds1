@@ -3,6 +3,8 @@
 #include "Runtime/AIModule/Classes/AIController.h"
 #include "DS1EnemyAIController.generated.h"
 
+class ADS1Enemy;
+
 UCLASS()
 class DS1_API ADS1EnemyAIController : public AAIController
 {
@@ -19,6 +21,9 @@ public:
 	UAIPerceptionComponent* AIPerceptionComponent;
 
 	FTimerHandle TimerHandle;
+
+	UPROPERTY()
+	ADS1Enemy* ControlledEnemy;
 
 protected:
 	virtual void OnPossess(APawn* InPawn) override;

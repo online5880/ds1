@@ -1,8 +1,5 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "DS1StatBarWidget.generated.h"
 
@@ -18,6 +15,7 @@ protected:
 	UPROPERTY(meta = (BindWidget), BlueprintReadWrite)
 	class UProgressBar* StatBar;
 
+public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "StatBar")
 	FLinearColor FillColorAndOpacity =  FLinearColor::Red;
 

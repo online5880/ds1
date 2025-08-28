@@ -1,6 +1,7 @@
 ﻿#include "DS1EnemyAIController.h"
 
 #include "BehaviorTree/BlackboardComponent.h"
+#include "Character/DS1Enemy.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 #include "Perception/AIPerceptionComponent.h"
@@ -16,6 +17,8 @@ void ADS1EnemyAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
+	ControlledEnemy = Cast<ADS1Enemy>(InPawn);
+
 	RunBehaviorTree(BehaviorTreeAsset);
 
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle, this, &ThisClass::UpdateTarget,0.1f,true);
@@ -23,6 +26,7 @@ void ADS1EnemyAIController::OnPossess(APawn* InPawn)
 
 void ADS1EnemyAIController::OnUnPossess()
 {
+	ControlledEnemy = nullptr;
 	GetWorld()->GetTimerManager().ClearTimer(TimerHandle);
 	Super::OnUnPossess();
 }
@@ -37,10 +41,12 @@ void ADS1EnemyAIController::UpdateTarget() const
 	if (OutActors.Contains(PlayerCharacter))
 	{
 		SetTarget(PlayerCharacter);
+		ControlledEnemy->ToggleHealthBarVisibility(true);
 	}
 	else
 	{
 		SetTarget(nullptr);
+		ControlledEnemy->ToggleHealthBarVisibility(false);
 	}
 }
 

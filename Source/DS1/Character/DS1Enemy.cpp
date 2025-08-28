@@ -1,5 +1,6 @@
 ﻿#include "DS1Enemy.h"
-
+#include "AIController.h"
+#include "BrainComponent.h"
 #include "DS1GameplayTags.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/DS1AttributeActorComponent.h"
@@ -9,15 +10,20 @@
 #include "Components/WidgetComponent.h"
 #include "Engine/DamageEvents.h"
 #include "Equipments/DS1Weapon.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "Kismet/KismetMathLibrary.h"
+#include "Perception/AISense_Damage.h"
 #include "Sound/SoundCue.h"
+#include "UI/DS1StatBarWidget.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(DS1Enemy)
 
 ADS1Enemy::ADS1Enemy()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
+	bUseControllerRotationYaw = false;
+	GetCharacterMovement()->bOrientRotationToMovement = true;
 
 	// Targeting 구체 생성 및 Collision 설정
 	TargetingSphereComponent = CreateDefaultSubobject<USphereComponent>(TEXT("TargetingSphere"));
@@ -34,6 +40,14 @@ ADS1Enemy::ADS1Enemy()
 	LockOnWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	LockOnWidgetComponent->SetVisibility(false);
 
+	// HealthBar
+	HealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarWidgetComponent"));
+	HealthBarWidgetComponent->SetupAttachment(RootComponent);
+	HealthBarWidgetComponent->SetRelativeLocation(FVector(0.f,0.f,100.f));
+	HealthBarWidgetComponent->SetDrawSize(FVector2D(100.f,5.f));
+	HealthBarWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	HealthBarWidgetComponent->SetVisibility(false);
+	
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 
@@ -43,6 +57,7 @@ ADS1Enemy::ADS1Enemy()
 
 	// OnDeath 델리게이트 바인딩
 	AttributeComponent->OnDeath.AddUObject(this, &ThisClass::OnDeath);
+	AttributeComponent->OnAttributeChanged.AddUObject(this, &ThisClass::OnAttributeChanged);
 }
 
 void ADS1Enemy::BeginPlay()
@@ -59,6 +74,9 @@ void ADS1Enemy::BeginPlay()
 		CombatComponent->SetCombatEnabled(true);
 		Weapon->EquipItem();
 	}
+
+	// 체력바 설정
+	SetupHealthBar();
 }
 
 void ADS1Enemy::Tick(float DeltaTime)
@@ -93,6 +111,9 @@ float ADS1Enemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
 		// 히트한 객체의 Location(객체 중심 관점)
 		FVector HitLocation = PointDamageEvent->HitInfo.Location;
 
+		// AI가 데미지를 인식할 수 있도록 알려줌.
+		UAISense_Damage::ReportDamageEvent(GetWorld(), this, EventInstigator->GetPawn(), ActualDamage, HitLocation, HitLocation);
+
 		ImpactEffect(ImpactLocation);
 		
 		HitReact(EventInstigator->GetPawn());
@@ -103,6 +124,12 @@ float ADS1Enemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
 
 void ADS1Enemy::OnDeath()
 {
+	// Stop BehaviorTree
+	if (AAIController* AIController = Cast<AAIController>(GetController()))
+	{
+		AIController->GetBrainComponent()->StopLogic(TEXT("Death"));
+	}
+	
 	if (UCapsuleComponent* CapsuleComp = GetCapsuleComponent())
 	{
 		CapsuleComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -114,6 +141,40 @@ void ADS1Enemy::OnDeath()
 		MeshComp->SetCollisionProfileName("Ragdoll");
 		MeshComp->SetSimulatePhysics(true);
 		MeshComp->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	}
+}
+
+void ADS1Enemy::OnAttributeChanged(EDS1AttributeType AttributeType, float InValue)
+{
+	if (AttributeComponent == nullptr) return;
+
+	if (AttributeType == EDS1AttributeType::Health)
+	{
+		if (HealthBarWidgetComponent)
+		{
+			if (const UDS1StatBarWidget* StatBar = Cast<UDS1StatBarWidget>(HealthBarWidgetComponent->GetWidget()))
+			{
+				StatBar->SetRatio(InValue);
+			}
+		}
+	}
+}
+
+void ADS1Enemy::SetupHealthBar()
+{
+	if (HealthBarWidgetComponent)
+	{
+		if (UDS1StatBarWidget* StatBar = Cast<UDS1StatBarWidget>(HealthBarWidgetComponent->GetWidget()))
+		{
+			// 컬러 설정
+			StatBar->FillColorAndOpacity = FLinearColor::Red;
+		}
+	}
+
+	// 체력 초기값 설정
+	if (AttributeComponent)
+	{
+		AttributeComponent->BroadcastAttributeChanged(EDS1AttributeType::Health);
 	}
 }
 
@@ -197,6 +258,14 @@ void ADS1Enemy::PerformAttack(FGameplayTag& AttackTypeTag, FOnMontageEnded& Mont
 		const float StaminaCost = Weapon->GetStaminaCostForTag(AttackTypeTag);
 		AttributeComponent->DecreaseStamina(StaminaCost);
 		AttributeComponent->ToggleStaminaRegeneration(true, 1.5f);
+	}
+}
+
+void ADS1Enemy::ToggleHealthBarVisibility(bool bVisibility)
+{
+	if (HealthBarWidgetComponent)
+	{
+		HealthBarWidgetComponent->SetVisibility(bVisibility);
 	}
 }
 

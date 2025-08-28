@@ -1,9 +1,7 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 
 #include "UI/DS1StatBarWidget.h"
-
 #include "Components/ProgressBar.h"
+#include UE_INLINE_GENERATED_CPP_BY_NAME(DS1StatBarWidget)
 
 UDS1StatBarWidget::UDS1StatBarWidget(const FObjectInitializer& ObjectInitializer) :Super(ObjectInitializer)
 {

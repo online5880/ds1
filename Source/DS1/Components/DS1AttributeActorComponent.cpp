@@ -63,6 +63,7 @@ void UDS1AttributeActorComponent::BroadcastAttributeChanged(EDS1AttributeType In
 			break;
 
 		case EDS1AttributeType::Health:
+			Ratio = GetHealthRatio();
 			break;
 		}
 		OnAttributeChanged.Broadcast(InAttributeType, Ratio);

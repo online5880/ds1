@@ -63,6 +63,7 @@ public:
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 
 	FORCEINLINE float GetStaminaRatio() const {return BaseStamina / MaxStamina; }
+	FORCEINLINE float GetHealthRatio() const {return BaseHealth / MaxHealth; }
 
 	/** 스태미나가 충분한지 확인 */
 	bool CheckHasEnoughStamina(float StaminaCost) const;

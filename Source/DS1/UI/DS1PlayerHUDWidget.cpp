@@ -1,10 +1,7 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "UI/DS1PlayerHUDWidget.h"
-
 #include "DS1StatBarWidget.h"
 #include "Components/DS1AttributeActorComponent.h"
+#include UE_INLINE_GENERATED_CPP_BY_NAME(DS1PlayerHUDWidget)
 
 UDS1PlayerHUDWidget::UDS1PlayerHUDWidget(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -21,6 +18,7 @@ void UDS1PlayerHUDWidget::NativeConstruct()
 		{
 			Attribute->OnAttributeChanged.AddUObject(this, &UDS1PlayerHUDWidget::OnAttributeChanged);
 			Attribute->BroadcastAttributeChanged(EDS1AttributeType::Stamina);
+			Attribute->BroadcastAttributeChanged(EDS1AttributeType::Health);
 		}
 	}
 }
@@ -34,6 +32,7 @@ void UDS1PlayerHUDWidget::OnAttributeChanged(EDS1AttributeType AttributeType, fl
 		break;
 		
 	case EDS1AttributeType::Health:
+		HealthBarWidget->SetRatio(InValue);
 		break;
 	}
 }
