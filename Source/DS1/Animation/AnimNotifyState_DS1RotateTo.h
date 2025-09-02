@@ -1,0 +1,19 @@
+﻿#pragma once
+
+
+#include "Animation/AnimNotifies/AnimNotifyState.h"
+#include "AnimNotifyState_DS1RotateTo.generated.h"
+
+/**
+ * 
+ */
+UCLASS(meta=(DisplayName = "Rotate To"))
+class DS1_API UAnimNotifyState_DS1RotateTo : public UAnimNotifyState
+{
+	GENERATED_BODY()
+
+public:
+	virtual void NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration, const FAnimNotifyEventReference& EventReference) override;
+
+	virtual void NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference) override;
+};

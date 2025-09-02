@@ -2,6 +2,7 @@
 
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Character/DS1Enemy.h"
+#include "Components/DS1RotationComponent.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 #include "Perception/AIPerceptionComponent.h"
@@ -55,5 +56,10 @@ void ADS1EnemyAIController::SetTarget(AActor* NewTarget) const
 	if (IsValid(Blackboard))
 	{
 		Blackboard->SetValueAsObject(FName("Target"), NewTarget);
+	}
+
+	if (UDS1RotationComponent* RotationComponent = ControlledEnemy->GetComponentByClass<UDS1RotationComponent>())
+	{
+		RotationComponent->SetTargetActor(NewTarget);
 	}
 }

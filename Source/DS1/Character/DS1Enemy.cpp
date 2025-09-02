@@ -5,6 +5,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/DS1AttributeActorComponent.h"
 #include "Components/DS1CombatComponent.h"
+#include "Components/DS1RotationComponent.h"
 #include "Components/DS1StateComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
@@ -54,6 +55,7 @@ ADS1Enemy::ADS1Enemy()
 	AttributeComponent = CreateDefaultSubobject<UDS1AttributeActorComponent>(TEXT("Attribute"));
 	StateComponent = CreateDefaultSubobject<UDS1StateComponent>(TEXT("State"));
 	CombatComponent = CreateDefaultSubobject<UDS1CombatComponent>(TEXT("Combat"));
+	RotationComponent = CreateDefaultSubobject<UDS1RotationComponent>(TEXT("RotationComponent"));
 
 	// OnDeath 델리게이트 바인딩
 	AttributeComponent->OnDeath.AddUObject(this, &ThisClass::OnDeath);
@@ -157,6 +159,7 @@ void ADS1Enemy::OnAttributeChanged(EDS1AttributeType AttributeType, float InValu
 				StatBar->SetRatio(InValue);
 			}
 		}
+		
 	}
 }
 

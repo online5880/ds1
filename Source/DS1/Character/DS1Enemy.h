@@ -29,6 +29,9 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	class UDS1CombatComponent* CombatComponent;
 
+	UPROPERTY(VisibleAnywhere)
+	class UDS1RotationComponent* RotationComponent;
+
 	// Lock On UI Widget
 	UPROPERTY(VisibleAnywhere, Category = "Targeting")
 	class UWidgetComponent* LockOnWidgetComponent;
