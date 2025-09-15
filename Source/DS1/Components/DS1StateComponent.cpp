@@ -60,6 +60,10 @@ void UDS1StateComponent::MovementInputEnableAction()
 
 void UDS1StateComponent::ClearState()
 {
+	if (CurrentState == DS1GameplayTags::Character_State_Death)
+	{
+		return;
+	}
 	CurrentState = FGameplayTag::EmptyTag;
 }
 

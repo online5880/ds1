@@ -4,8 +4,7 @@
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(AnimNotifyState_DS1RotateTo)
 
-void UAnimNotifyState_DS1RotateTo::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
-	float TotalDuration, const FAnimNotifyEventReference& EventReference)
+void UAnimNotifyState_DS1RotateTo::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float TotalDuration, const FAnimNotifyEventReference& EventReference)
 {
 	Super::NotifyBegin(MeshComp, Animation, TotalDuration, EventReference);
 
@@ -15,8 +14,7 @@ void UAnimNotifyState_DS1RotateTo::NotifyBegin(USkeletalMeshComponent* MeshComp,
 	}
 }
 
-void UAnimNotifyState_DS1RotateTo::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
-	const FAnimNotifyEventReference& EventReference)
+void UAnimNotifyState_DS1RotateTo::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference)
 {
 	Super::NotifyEnd(MeshComp, Animation, EventReference);
 
@@ -25,3 +23,4 @@ void UAnimNotifyState_DS1RotateTo::NotifyEnd(USkeletalMeshComponent* MeshComp, U
 		RotationComponent->ToggleShouldRotate(false);
 	}
 }
+

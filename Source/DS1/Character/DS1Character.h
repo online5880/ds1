@@ -140,6 +140,7 @@ public:
 
 public:
 	FORCEINLINE UDS1StateComponent* GetStateComponent() const { return StateComponent; }
+	bool IsDeath() const;
 
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	void ImpactEffect(const FVector& Location) const;

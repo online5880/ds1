@@ -141,8 +141,18 @@ void ADS1Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	}
 }
 
+bool ADS1Character::IsDeath() const
+{
+	check(StateComponent);
+
+	FGameplayTagContainer CheckTags;
+	CheckTags.AddTag(DS1GameplayTags::Character_State_Death);
+
+	return StateComponent->IsCurrentStateEqualToAny(CheckTags);
+}
+
 float ADS1Character::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
-	class AController* EventInstigator, AActor* DamageCauser)
+                                class AController* EventInstigator, AActor* DamageCauser)
 {
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 

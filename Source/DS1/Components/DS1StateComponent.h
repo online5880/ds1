@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "DS1GameplayTags.h"
 #include "Components/ActorComponent.h"
 #include "GameplayTagContainer.h"
 #include "DS1StateComponent.generated.h"
@@ -43,7 +44,14 @@ protected:
 	void MovementInputEnableAction();
 
 public:
-	FORCEINLINE void SetState(const FGameplayTag NewState) { CurrentState = NewState; }
+	FORCEINLINE void SetState(const FGameplayTag NewState)
+	{
+		if (CurrentState == DS1GameplayTags::Character_State_Death)
+		{
+			return;
+		}
+		CurrentState = NewState;
+	}
 	FORCEINLINE FGameplayTag GetCurrentState() const { return CurrentState; }
 
 	/** 현재 상태 초기화 */

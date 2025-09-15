@@ -46,3 +46,12 @@ enum class EWeaponCollisionType : uint8
 	MainCollision,
 	SecondCollision
 };
+
+UENUM(BlueprintType)
+enum class EDS1AIBehavior : uint8
+{
+	Idle,			// 기본
+	Patrol,			// 순찰
+	MeleeAttack,	// 근접공격
+	Approach,		// 따라가기
+};

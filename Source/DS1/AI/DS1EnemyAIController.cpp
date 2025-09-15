@@ -1,6 +1,7 @@
 ﻿#include "DS1EnemyAIController.h"
 
 #include "BehaviorTree/BlackboardComponent.h"
+#include "Character/DS1Character.h"
 #include "Character/DS1Enemy.h"
 #include "Components/DS1RotationComponent.h"
 #include "GameFramework/Character.h"
@@ -37,12 +38,20 @@ void ADS1EnemyAIController::UpdateTarget() const
 	TArray<AActor*> OutActors;
 	AIPerceptionComponent->GetKnownPerceivedActors(nullptr, OutActors);
 
-	ACharacter* PlayerCharacter = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
+	ADS1Character* PlayerCharacter = Cast<ADS1Character>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 
 	if (OutActors.Contains(PlayerCharacter))
 	{
-		SetTarget(PlayerCharacter);
-		ControlledEnemy->ToggleHealthBarVisibility(true);
+		if (!PlayerCharacter->IsDeath())
+		{
+			SetTarget(PlayerCharacter);
+			ControlledEnemy->ToggleHealthBarVisibility(true);
+		}
+		else
+		{
+			SetTarget(nullptr);
+			ControlledEnemy->ToggleHealthBarVisibility(false);
+		}
 	}
 	else
 	{
